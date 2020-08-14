@@ -4,28 +4,32 @@ from math import sin, cos, degrees, radians, acos
 from pyglet.gl import *
 from angle_calc import angle_between_origin_and_positions
 
-gun_image = pyglet.image.load("gun_r_transparant.png")
-gun_image.anchor_x = int(gun_image.width / 3.5)
-gun_image.anchor_y = int(gun_image.height // 2)
+player_image = pyglet.image.load("gun_r_transparant.png")
+player_image.anchor_x = int(player_image.width / 3.5)
+player_image.anchor_y = int(player_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_transparant.png")
 
 directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364]}
 
-class Gun:
+class Player:
     def __init__(self, screen):
         self.screen = screen
         self._rotation = 0
-        self._speed = 0
-        self._strafe_speed = 0
+        # self._speed = 0
+        # self._strafe_speed = 0
+        self.speed = 50
+        
         screen_width, screen_height = screen.get_size()
-        self.x = (screen_width - gun_image.width) // 2
-        self.y = (screen_height - gun_image.height) // 2
-        self.sprite = pyglet.sprite.Sprite(gun_image, self.x, self.y)
+        self.x = (screen_width - player_image.width) // 2
+        self.y = (screen_height - player_image.height) // 2
+        self.sprite = pyglet.sprite.Sprite(player_image, self.x, self.y)
         self.sprite.update(scale_x=0.7, scale_y=0.7)
         self.screen.register_object(self)
         self.time_between_shots = 0.5
         self.time_last_shot = 0
+
+        self.movement_update = {'x': 0, 'y': 0}
 
     @property
     def rotation(self):
@@ -35,21 +39,22 @@ class Gun:
     def rotation(self, value):
         self._rotation = value
 
-    @property
-    def speed(self):
-        return self._speed
 
-    @speed.setter
-    def speed(self, value):
-        self._speed = min(200, value)
+    # @property
+    # def speed(self):
+    #     return self._speed
+
+    # @speed.setter
+    # def speed(self, value):
+    #     self._speed = min(200, value)
     
-    @property
-    def strafe_speed(self):
-        return self._strafe_speed
+    # @property
+    # def strafe_speed(self):
+    #     return self._strafe_speed
 
-    @strafe_speed.setter
-    def strafe_speed(self, value):
-        self._strafe_speed = min(200, value)
+    # @strafe_speed.setter
+    # def strafe_speed(self, value):
+    #     self._strafe_speed = min(200, value)
     
     @property
     def x(self):
@@ -68,10 +73,24 @@ class Gun:
         self._y = value
     
     def update(self, dt):
-        self.speed = max(0, self.speed - 30*dt)
-        self.strafe_speed = max(0, self.strafe_speed - 2*dt)
-        self.x = self.x + cos(radians(self.rotation))*self.speed*dt
-        self.y = self.y - sin(radians(self.rotation))*self.speed*dt
+        self.x += self.movement_update['x']*dt
+        self.y += self.movement_update['y']*dt
+        self.movement_update['x'] = 0
+        self.movement_update['y'] = 0
+
+    def movement(self, movement):
+        if movement['left'] and not movement['right']:
+            self.movement_update['x'] += -cos(radians(self.rotation + 90))*self.speed
+            self.movement_update['y'] += sin(radians(self.rotation + 90))*self.speed
+        if movement['right'] and not movement['left']:
+            self.movement_update['x'] += cos(radians(self.rotation + 90))*self.speed
+            self.movement_update['y'] += -sin(radians(self.rotation + 90))*self.speed
+        if movement['up'] and not movement['down']:
+            self.movement_update['x'] += cos(radians(self.rotation))*self.speed
+            self.movement_update['y'] += -sin(radians(self.rotation))*self.speed
+        if movement['down'] and not movement['up']:
+            self.movement_update['x'] += -cos(radians(self.rotation))*self.speed
+            self.movement_update['y'] += sin(radians(self.rotation))*self.speed
 
     def draw(self):
         self.sprite.update(rotation=self.rotation, x=self.x, y=self.y)
@@ -83,14 +102,6 @@ class Gun:
             self.strafe_speed = 0
             return
         self.rotation = -1 * angle_between_origin_and_positions(self.x, self.y, mouse_x, mouse_y)
-
-    def strafe_left(self, dt):
-        self.x += -cos(radians(self.rotation + 90))*self.strafe_speed*dt
-        self.y += sin(radians(self.rotation + 90))*self.strafe_speed*dt
-
-    def strafe_right(self, dt):
-        self.x -= -cos(radians(self.rotation + 90))*self.strafe_speed*dt
-        self.y -= sin(radians(self.rotation + 90))*self.strafe_speed*dt
 
     def shoot(self, *args):
         now = time.time()
@@ -125,12 +136,12 @@ class Screen(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_2d()
-        self.movement_dict = {'strafe_left': False, 'strafe_right': False, 'up': False, 'down': False}
+        self.movement_dict = {'left': False, 'right': False, 'up': False, 'down': False}
         self.mouse_dict = {'left_clicked': False, 'x': 0, 'y': 0}
         self.mouse_positions = [0, 0]
         self.objects = []
         self.delete_objects = []
-        self.gun = Gun(self)
+        self.player = Player(self)
         glClearColor(1, 1, 1, 1)
         pyglet.clock.schedule_interval(self.update, 1.0 / 30)
     
@@ -164,9 +175,9 @@ class Screen(pyglet.window.Window):
         glEnd()
 
     def update(self, dt):
-        self.gun.rotate_based_on_mouse_position(self.mouse_dict['x'], self.mouse_dict['y'])
+        self.player.rotate_based_on_mouse_position(self.mouse_dict['x'], self.mouse_dict['y'])
         if self.mouse_dict['left_clicked']:
-            self.gun.shoot()
+            self.player.shoot()
 
         self.update_movement(dt)
         for object in self.objects:
@@ -174,16 +185,7 @@ class Screen(pyglet.window.Window):
         self.objects = [object for object in self.objects if not hasattr(object, 'out_of_bounds') or object.out_of_bounds == False]
 
     def update_movement(self, dt):
-        if self.movement_dict['strafe_left']:
-            self.gun.strafe_speed += 1
-            self.gun.strafe_left(dt)
-        if self.movement_dict['strafe_right']:
-            self.gun.strafe_speed += 1
-            self.gun.strafe_right(dt)
-        if self.movement_dict['up']:
-            self.gun.speed += 5
-        if self.movement_dict['down']:
-            self.gun.speed -= 5
+        self.player.movement(self.movement_dict)
 
     def set_2d(self):
         width, height = self.get_size()
@@ -197,24 +199,14 @@ class Screen(pyglet.window.Window):
         glLoadIdentity()
     
     def on_key_press(self, key, modifier):
-        if key in directionals['left']:
-            self.movement_dict['strafe_left'] = True
-        if key in directionals['right']:
-            self.movement_dict['strafe_right'] = True
-        if key in directionals['up']:
-            self.movement_dict['up'] = True
-        if key in directionals['down']:
-            self.movement_dict['down'] = True
+        for direction, key_numbers in directionals.items():
+            if key in key_numbers:
+                self.movement_dict[direction] = True
 
     def on_key_release(self, key, modifier):
-        if key in directionals['left']:
-            self.movement_dict['strafe_left'] = False
-        if key in directionals['right']:
-            self.movement_dict['strafe_right'] = False
-        if key in directionals['up']:
-            self.movement_dict['up'] = False
-        if key in directionals['down']:
-            self.movement_dict['down'] = False
+        for direction, key_numbers in directionals.items():
+            if key in key_numbers:
+                self.movement_dict[direction] = False
 
     def on_mouse_motion(self, mouse_x, mouse_y, delta_x, delta_y):
         self.mouse_dict['x'] = mouse_x
