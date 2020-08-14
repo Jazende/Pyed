@@ -10,7 +10,7 @@ gun_image.anchor_y = int(gun_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_transparant.png")
 
-directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363]}
+directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364]}
 
 class Gun:
     def __init__(self, screen):
@@ -68,7 +68,7 @@ class Gun:
         self._y = value
     
     def update(self, dt):
-        self.speed = max(0, self.speed - 10*dt)
+        self.speed = max(0, self.speed - 30*dt)
         self.strafe_speed = max(0, self.strafe_speed - 2*dt)
         self.x = self.x + cos(radians(self.rotation))*self.speed*dt
         self.y = self.y - sin(radians(self.rotation))*self.speed*dt
@@ -126,7 +126,7 @@ class Screen(pyglet.window.Window):
         super().__init__(*args, **kwargs)
         self.set_2d()
         self.movement_dict = {'strafe_left': False, 'strafe_right': False, 'up': False, 'down': False}
-        self.mouse_dict = {'left_clicked': False}
+        self.mouse_dict = {'left_clicked': False, 'x': 0, 'y': 0}
         self.mouse_positions = [0, 0]
         self.objects = []
         self.delete_objects = []
@@ -164,7 +164,10 @@ class Screen(pyglet.window.Window):
         glEnd()
 
     def update(self, dt):
-        self.gun.rotate_based_on_mouse_position(*self.mouse_positions)
+        self.gun.rotate_based_on_mouse_position(self.mouse_dict['x'], self.mouse_dict['y'])
+        if self.mouse_dict['left_clicked']:
+            self.gun.shoot()
+
         self.update_movement(dt)
         for object in self.objects:
             object.update(dt)
@@ -179,6 +182,8 @@ class Screen(pyglet.window.Window):
             self.gun.strafe_right(dt)
         if self.movement_dict['up']:
             self.gun.speed += 5
+        if self.movement_dict['down']:
+            self.gun.speed -= 5
 
     def set_2d(self):
         width, height = self.get_size()
@@ -198,6 +203,8 @@ class Screen(pyglet.window.Window):
             self.movement_dict['strafe_right'] = True
         if key in directionals['up']:
             self.movement_dict['up'] = True
+        if key in directionals['down']:
+            self.movement_dict['down'] = True
 
     def on_key_release(self, key, modifier):
         if key in directionals['left']:
@@ -206,19 +213,26 @@ class Screen(pyglet.window.Window):
             self.movement_dict['strafe_right'] = False
         if key in directionals['up']:
             self.movement_dict['up'] = False
+        if key in directionals['down']:
+            self.movement_dict['down'] = False
 
-    def on_mouse_motion(self, *args, **kwargs):
-        self.mouse_positions = args[:2]
+    def on_mouse_motion(self, mouse_x, mouse_y, delta_x, delta_y):
+        self.mouse_dict['x'] = mouse_x
+        self.mouse_dict['y'] = mouse_y
+
+    def on_mouse_drag(self, mouse_x, mouse_y, delta_x, delta_y, button, modifiers):
+        self.mouse_dict['x'] = mouse_x
+        self.mouse_dict['y'] = mouse_y
+        if button == 1:
+            self.mouse_dict['left_clicked'] = True
 
     def on_mouse_press(self, mouse_x, mouse_y, button, modifiers):
-        self.attempt_shot()
+        if button == 1:
+            self.mouse_dict['left_clicked'] = True
 
-    def on_mouse_drag(self, *args, **kwargs):
-        self.mouse_positions = args[:2]
-        self.attempt_shot()
-
-    def attempt_shot(self):
-        self.gun.shoot()
+    def on_mouse_release(self, mouse_x, mouse_y, button, modifiers):
+        if button == 1:
+            self.mouse_dict['left_clicked'] = False
 
 def main():
     screen = Screen(width=800, height=640)
