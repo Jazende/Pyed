@@ -226,6 +226,10 @@ class Screen(pyglet.window.Window):
         if button == 1:
             self.mouse_dict['left_clicked'] = False
 
+class Enemy:
+    def __init__(self):
+        pass
+
 def main():
     screen = Screen(width=800, height=640)
     pyglet.app.run()
