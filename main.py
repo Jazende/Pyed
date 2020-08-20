@@ -1,8 +1,10 @@
 import pyglet
+import random
 import time
 from math import sin, cos, degrees, radians, acos
 from pyglet.gl import *
 from angle_calc import angle_between_origin_and_positions
+from normalize_movement import normalize
 
 player_image = pyglet.image.load("gun_r_transparant.png")
 player_image.anchor_x = int(player_image.width / 3.5)
@@ -10,15 +12,85 @@ player_image.anchor_y = int(player_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_transparant.png")
 
+enemy_image = pyglet.image.load("enemy_transparant.png")
+
 directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364]}
+
+class Enemy:
+    def __init__(self, screen):
+        self.screen = screen
+        w, h = screen.get_size()
+        self.x = w // 2
+        self.y = (h * 4) // 5 
+        self.sprite = pyglet.sprite.Sprite(enemy_image, self.x, self.y)
+        self.sprite.update(scale_x=0.7, scale_y=0.7)
+
+        self.screen.register_object(self)
+
+    def draw(self):
+        self.sprite.draw()
+
+    def update(self, dt):
+        pass
+
+class Ruski(Enemy):
+    def __init__(self, screen):
+        super().__init__(screen)
+        self.moving = False
+        self.destination = (0, 0)
+        self.speed = 200
+        width, height = screen.get_size()
+
+        self.destinations = {
+            'current': (2, 3),
+            (0, 3): {'x': 100, 'y': height-100, 'neighbours': [(1, 3), (0, 2)]},
+            (1, 3): {'x': 200, 'y': height-100, 'neighbours': [(0, 3), (2, 3), (1, 2)]},
+            (2, 3): {'x': width-200, 'y': height-100, 'neighbours': [(1, 3), (3, 3), (2, 2)]},
+            (3, 3): {'x': width-100, 'y': height-100, 'neighbours': [(2, 3), (3, 2)]},
+
+            (0, 2): {'x': 100, 'y': height-200, 'neighbours': [(1, 2), (0, 1), (0, 3)]},
+            (1, 2): {'x': 200, 'y': height-200, 'neighbours': [(0, 2), (2, 2), (1, 1), (1, 3)]},
+            (2, 2): {'x': width-200, 'y': height-200, 'neighbours': [(1, 2), (3, 2), (2, 1), (2, 3)]},
+            (3, 2): {'x': width-100, 'y': height-200, 'neighbours': [(2, 2), (3, 1), (3, 3)]},
+
+            (0, 1): {'x': 100, 'y': 200, 'neighbours': [(1, 1), (0, 0), (0, 2)]},
+            (1, 1): {'x': 200, 'y': 200, 'neighbours': [(0, 1), (2, 1), (1, 0), (1, 2)]},
+            (2, 1): {'x': width-200, 'y': 200, 'neighbours': [(1, 1), (3, 1), (2, 0), (2, 2)]},
+            (3, 1): {'x': width-100, 'y': 200, 'neighbours': [(2, 1), (3, 0), (3, 2)]},
+
+            (0, 0): {'x': 100, 'y': 100, 'neighbours': [(1, 0), (0, 1)]},
+            (1, 0): {'x': 200, 'y': 100, 'neighbours': [(0, 0), (2, 0), (1, 1)]},
+            (2, 0): {'x': width-200, 'y': 100, 'neighbours': [(1, 0), (3, 0), (2, 1)]},
+            (3, 0): {'x': width-100, 'y': 100, 'neighbours': [(2, 0), (3, 1)]},
+        }
+        
+    def update(self, dt):
+        if self.moving:
+            delta_x, delta_y = normalize(self.destination[0] - self.x, self.destination[1] - self.y)
+
+            delta_x = min(delta_x*self.speed*dt, abs(self.destination[0] - self.x))
+            delta_y = min(delta_y*self.speed*dt, abs(self.destination[1] - self.y))
+
+            self.x += delta_x
+            self.y += delta_y
+
+            if (self.x, self.y) == self.destination:
+                self.moving = False
+        else:
+            self.choose_new_destination()
+            self.moving = True
+        self.sprite.update(x=self.x, y=self.y)
+    
+    def choose_new_destination(self):
+        self.destinations['current'] = random.choice(self.destinations[self.destinations['current']]['neighbours'])
+        self.destination = (self.destinations[self.destinations['current']]['x'], self.destinations[self.destinations['current']]['y'])
+
 
 class Player:
     def __init__(self, screen):
         self.screen = screen
         self._rotation = 0
-        # self._speed = 0
-        # self._strafe_speed = 0
-        self.speed = 50
+        self.speed = 100
         
         screen_width, screen_height = screen.get_size()
         self.x = (screen_width - player_image.width) // 2
@@ -38,23 +110,6 @@ class Player:
     @rotation.setter
     def rotation(self, value):
         self._rotation = value
-
-
-    # @property
-    # def speed(self):
-    #     return self._speed
-
-    # @speed.setter
-    # def speed(self, value):
-    #     self._speed = min(200, value)
-    
-    # @property
-    # def strafe_speed(self):
-    #     return self._strafe_speed
-
-    # @strafe_speed.setter
-    # def strafe_speed(self, value):
-    #     self._strafe_speed = min(200, value)
     
     @property
     def x(self):
@@ -140,8 +195,8 @@ class Screen(pyglet.window.Window):
         self.mouse_dict = {'left_clicked': False, 'x': 0, 'y': 0}
         self.mouse_positions = [0, 0]
         self.objects = []
-        self.delete_objects = []
         self.player = Player(self)
+        self.enemy = Ruski(self)
         glClearColor(1, 1, 1, 1)
         pyglet.clock.schedule_interval(self.update, 1.0 / 30)
     
@@ -225,10 +280,6 @@ class Screen(pyglet.window.Window):
     def on_mouse_release(self, mouse_x, mouse_y, button, modifiers):
         if button == 1:
             self.mouse_dict['left_clicked'] = False
-
-class Enemy:
-    def __init__(self):
-        pass
 
 def main():
     screen = Screen(width=800, height=640)
