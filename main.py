@@ -15,10 +15,14 @@ player_image.anchor_y = int(player_image.height // 2)
 shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
 enemy_image = pyglet.image.load("enemy_transparant.png")
+enemy_image.anchor_x = int(enemy_image.width // 2)
+enemy_image.anchor_y = int(enemy_image.height // 2)
 
 directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364]}
 
 class Enemy:
+    FLAG_ROTATING_TO_PLAYER = True
+
     def __init__(self, screen):
         self.screen = screen
         w, h = screen.get_size()
@@ -35,12 +39,19 @@ class Enemy:
     def update(self, dt):
         pass
 
+    def rotate_based_on_player_position(self, player):
+        if not self.FLAG_ROTATING_TO_PLAYER:
+            return
+        self.rotation = -1 * angle_between_origin_and_positions(self.x, self.y, player.x, player.y)
+        self.sprite.update(rotation=self.rotation)
+
 class Ruski(Enemy):
     def __init__(self, screen):
         super().__init__(screen)
         self.sprite.update(scale_x=1.3, scale_y=1.3)
         self.moving = False
         self.shooting = False
+        self.FLAG_ROTATING_TO_PLAYER = True
         self.destination = (0, 0)
         self.speed = 200
         width, height = screen.get_size()
@@ -96,9 +107,10 @@ class Ruski(Enemy):
         if isinstance(object, Shot):
             for collision_check in object.collision_checks:
                 x, y = collision_check
-                if distance_by_values(x, y, self.x + self.sprite.width // 2, self.y + self.sprite.height // 2) < self.sprite.width // 2:
+                if distance_by_values(x, y, self.x, self.y) < self.sprite.width // 2:
                     object.out_of_bounds = True
                     self.sprite.update(scale_x=self.sprite.scale_x-0.1, scale_y=self.sprite.scale_y-0.1)
+                    self.speed += 25
                     return True
                 return False
         else:
@@ -253,18 +265,21 @@ class Screen(pyglet.window.Window):
 
     def update(self, dt):
         self.player.rotate_based_on_mouse_position(self.mouse_dict['x'], self.mouse_dict['y'])
+        self.enemy.rotate_based_on_player_position(self.player)
         if self.mouse_dict['left_clicked']:
             self.player.shoot()
 
         self.update_movement(dt)
         for object in self.objects:
             object.update(dt)
-            if isinstance(object, Shot):
-                for target in self.objects:
-                    if isinstance(target, Enemy):
-                        if hasattr(target, 'collision'):
-                            if target.collision(object):
-                                print('Shot hit')
+            if not isinstance(object, Shot):
+                continue
+            for target in self.objects:
+                if not isinstance(target, Enemy):
+                    continue
+                if not hasattr(target, 'collision'):
+                    continue
+                target.collision(object)
         self.objects = [object for object in self.objects if not hasattr(object, 'out_of_bounds') or object.out_of_bounds == False]
 
     def update_movement(self, dt):
