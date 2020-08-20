@@ -9,15 +9,22 @@ from math_utilities import sin
 from math_utilities import cos
 from math_utilities import radians
 
-player_image = pyglet.image.load("gun_r_transparant.png")
-player_image.anchor_x = int(player_image.width / 3.5)
+# player_image = pyglet.image.load("gun_r_transparant.png")
+# player_image.anchor_x = int(player_image.width / 3.5)
+# player_image.anchor_y = int(player_image.height // 2)
+player_image = pyglet.image.load("red_circle_p_transparant.png")
+player_image.anchor_x = int(player_image.width // 2)
 player_image.anchor_y = int(player_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
-enemy_image = pyglet.image.load("enemy_transparant.png")
+# enemy_image = pyglet.image.load("enemy_transparant.png")
+enemy_image = pyglet.image.load("red_circle_e_transparant.png")
 enemy_image.anchor_x = int(enemy_image.width // 2)
 enemy_image.anchor_y = int(enemy_image.height // 2)
+
+crosshair_image = pyglet.image.load("black_crosshair_transparant.png")
+cursor = pyglet.window.ImageMouseCursor(crosshair_image, 5, 5)
 
 directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364]}
 
@@ -225,6 +232,7 @@ class Shot:
 class Screen(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_mouse_cursor(cursor)
         self.set_2d()
         self.movement_dict = {'left': False, 'right': False, 'up': False, 'down': False}
         self.mouse_dict = {'left_clicked': False, 'x': 0, 'y': 0}
