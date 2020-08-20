@@ -9,17 +9,13 @@ from math_utilities import sin
 from math_utilities import cos
 from math_utilities import radians
 
-# player_image = pyglet.image.load("gun_r_transparant.png")
-# player_image.anchor_x = int(player_image.width / 3.5)
-# player_image.anchor_y = int(player_image.height // 2)
 player_image = pyglet.image.load("red_circle_p_transparant.png")
 player_image.anchor_x = int(player_image.width // 2)
 player_image.anchor_y = int(player_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
-# enemy_image = pyglet.image.load("enemy_transparant.png")
-enemy_image = pyglet.image.load("red_circle_e_transparant.png")
+enemy_image = pyglet.image.load("face_transparant_r.png")
 enemy_image.anchor_x = int(enemy_image.width // 2)
 enemy_image.anchor_y = int(enemy_image.height // 2)
 
