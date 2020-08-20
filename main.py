@@ -11,7 +11,6 @@ player_image = pyglet.image.load("gun_r_transparant.png")
 player_image.anchor_x = int(player_image.width / 3.5)
 player_image.anchor_y = int(player_image.height // 2)
 
-# shot_image = pyglet.image.load("shot_r_transparant.png")
 shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
 enemy_image = pyglet.image.load("enemy_transparant.png")
@@ -51,7 +50,6 @@ class Ruski(Enemy):
         self.sprite.update(scale_x=1.3, scale_y=1.3)
         self.moving = False
         self.shooting = False
-        self.FLAG_ROTATING_TO_PLAYER = True
         self.destination = (0, 0)
         self.speed = 200
         width, height = screen.get_size()
@@ -107,7 +105,8 @@ class Ruski(Enemy):
         if isinstance(object, Shot):
             for collision_check in object.collision_checks:
                 x, y = collision_check
-                if distance_by_values(x, y, self.x, self.y) < self.sprite.width // 2:
+                # +2 for some leeway in hitting
+                if distance_by_values(x, y, self.x, self.y) < (self.sprite.width // 2 + 2):
                     object.out_of_bounds = True
                     self.sprite.update(scale_x=self.sprite.scale_x-0.1, scale_y=self.sprite.scale_y-0.1)
                     self.speed += 25

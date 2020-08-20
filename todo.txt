@@ -1,0 +1,17 @@
+functionality for multiple weapons
+functionality for multiple enemies
+functionality for multiple movement sets
+shift for dash
+space to aoe burst
+standing still to heal
+alternative fire
+update player to circle
+move shots to player and enemies
+move cos/sin to seperate math mod for cos(radians(x)) for simplicity
+seperate enemy movement from enemy
+improve enemy movement
+enemy shots
+enemy hp
+player lives
+
+
