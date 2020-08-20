@@ -28,12 +28,16 @@ def angle_between_origin_and_positions(self_x, self_y, mouse_x, mouse_y):
     
     return cos_angle
 
-def normalize_movement_with_speed(delta_x, delta_y, speed):
-    sum_ = delta_x + delta_y
-    proportional_x = delta_x / sum_
-    proportional_y = delta_y / sum_
-    movement_x = proportional_x * speed
-    movement_y = proportional_y * speed
+def normalize_with_speed(delta_x, delta_y, speed):
+    if delta_x == 0 or delta_y == 0:
+        return delta_x, delta_y
+    abs_sum = abs(delta_x) + abs(delta_y)
+    movement_x = (delta_x / abs_sum) * speed
+    movement_y = (delta_y / abs_sum) * speed
+    # proportional_x = delta_x / abs_sum
+    # proportional_y = delta_y / abs_sum
+    # movement_x = proportional_x * speed
+    # movement_y = proportional_y * speed
     return movement_x, movement_y
 
 def normalize(x, y):
@@ -44,27 +48,27 @@ def normalize(x, y):
     return x, y
 
 if __name__ == '__main__':
-    print(normalize_movement_with_speed(3, 7, 10))
-    print(normalize_movement_with_speed(14, 8, 23))
+    print(normalize_with_speed(3, 7, 10))
+    print(normalize_with_speed(14, 8, 23))
     print(normalize(5, 20))
     print(normalize(-3, 2))
-    print(angle_from_origin_and_positions(0, 0, 1, 0))
-    print(angle_from_origin_and_positions(0, 0, 1, 0.5))
-    print(angle_from_origin_and_positions(0, 0, 1, 1))
-    print(angle_from_origin_and_positions(0, 0, 0.5, 1))
-    print(angle_from_origin_and_positions(0, 0, 0, 1))
-    print(angle_from_origin_and_positions(0, 0, -0.5, 1))
-    print(angle_from_origin_and_positions(0, 0, -1, 1))
-    print(angle_from_origin_and_positions(0, 0, -1, 0.5))
-    print(angle_from_origin_and_positions(0, 0, -1, 0))
-    print(angle_from_origin_and_positions(0, 0, -1, -0.5))
-    print(angle_from_origin_and_positions(0, 0, -1, -1))
-    print(angle_from_origin_and_positions(0, 0, -0.5, -1))
-    print(angle_from_origin_and_positions(0, 0, 0, -1))
-    print(angle_from_origin_and_positions(0, 0, 0.5, -1))
-    print(angle_from_origin_and_positions(0, 0, 1, -1))
-    print(angle_from_origin_and_positions(0, 0, 1, -0.5))
-    print(angle_from_origin_and_positions(0, 0, 1, -0.01))
+    print(angle_between_origin_and_positions(0, 0, 1, 0))
+    print(angle_between_origin_and_positions(0, 0, 1, 0.5))
+    print(angle_between_origin_and_positions(0, 0, 1, 1))
+    print(angle_between_origin_and_positions(0, 0, 0.5, 1))
+    print(angle_between_origin_and_positions(0, 0, 0, 1))
+    print(angle_between_origin_and_positions(0, 0, -0.5, 1))
+    print(angle_between_origin_and_positions(0, 0, -1, 1))
+    print(angle_between_origin_and_positions(0, 0, -1, 0.5))
+    print(angle_between_origin_and_positions(0, 0, -1, 0))
+    print(angle_between_origin_and_positions(0, 0, -1, -0.5))
+    print(angle_between_origin_and_positions(0, 0, -1, -1))
+    print(angle_between_origin_and_positions(0, 0, -0.5, -1))
+    print(angle_between_origin_and_positions(0, 0, 0, -1))
+    print(angle_between_origin_and_positions(0, 0, 0.5, -1))
+    print(angle_between_origin_and_positions(0, 0, 1, -1))
+    print(angle_between_origin_and_positions(0, 0, 1, -0.5))
+    print(angle_between_origin_and_positions(0, 0, 1, -0.01))
     print(distance_by_values(0, 0, 0, 3))
     print(distance_by_values(0, 0, 3, 0))
     print(distance_by_values(0, 0, 4, 3))
