@@ -1,11 +1,13 @@
 import pyglet
 import random
 import time
-from math import sin, cos, degrees, radians, acos
 from pyglet.gl import *
-from angle_calc import angle_between_origin_and_positions
-from normalize_movement import normalize
-from distance_calc import distance_by_values
+from math_utilities import angle_between_origin_and_positions
+from math_utilities import distance_by_values
+from math_utilities import normalize
+from math_utilities import sin
+from math_utilities import cos
+from math_utilities import radians
 
 player_image = pyglet.image.load("gun_r_transparant.png")
 player_image.anchor_x = int(player_image.width / 3.5)
