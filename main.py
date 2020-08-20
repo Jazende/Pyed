@@ -91,16 +91,23 @@ class Ruski(Enemy):
     def sprite(self):
         return self.sprites[self.current_sprite]
 
-    def swap_shocked_face(self, dt):
+    def swap_shocked_face(self, *args, **kwargs):
         self.current_sprite = 'shocked'
+        self.FLAG_ROTATING_TO_PLAYER = False
         pyglet.clock.schedule_once(self.swap_angry_face, 3)
+        pyglet.clock.schedule_interval(self.rotate_on_hit, 0.01)
 
-    def swap_angry_face(self, dt):
+    def swap_angry_face(self, dt, *args, **kwargs):
         self.current_sprite = 'angry'
+        self.FLAG_ROTATING_TO_PLAYER = True
+        pyglet.clock.unschedule(self.rotate_on_hit)
 
     def update_sprites(self, **kwargs):
         for sprite in self.sprites.keys():
             self.sprites[sprite].update(**kwargs)
+
+    def rotate_on_hit(self, dt):
+        self.rotation += 360 * dt
 
     def draw(self):
         self.sprites[self.current_sprite].draw()
@@ -128,6 +135,8 @@ class Ruski(Enemy):
     def choose_new_destination(self):
         self.destinations['current'] = random.choice(self.destinations[self.destinations['current']]['neighbours'])
         self.destination = (self.destinations[self.destinations['current']]['x'], self.destinations[self.destinations['current']]['y'])
+        if distance_by_values(self.destination[0], self.destination[1], self.screen.player.x, self.screen.player.y) < (self.sprite.width * 2):
+            self.choose_new_destination()
 
     def collision(self, object):
         if isinstance(object, Shot):
@@ -261,7 +270,7 @@ class Screen(pyglet.window.Window):
         self.player = Player(self)
         self.enemy = Ruski(self)
         glClearColor(1, 1, 1, 1)
-        pyglet.clock.schedule_interval(self.update, 1.0 / 30)
+        pyglet.clock.schedule_interval(self.update, 1.0 / 60)
     
     def register_object(self, object):
         self.objects.append(object)
