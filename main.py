@@ -5,12 +5,14 @@ from math import sin, cos, degrees, radians, acos
 from pyglet.gl import *
 from angle_calc import angle_between_origin_and_positions
 from normalize_movement import normalize
+from distance_calc import distance_by_values
 
 player_image = pyglet.image.load("gun_r_transparant.png")
 player_image.anchor_x = int(player_image.width / 3.5)
 player_image.anchor_y = int(player_image.height // 2)
 
-shot_image = pyglet.image.load("shot_r_transparant.png")
+# shot_image = pyglet.image.load("shot_r_transparant.png")
+shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
 enemy_image = pyglet.image.load("enemy_transparant.png")
 
@@ -36,7 +38,9 @@ class Enemy:
 class Ruski(Enemy):
     def __init__(self, screen):
         super().__init__(screen)
+        self.sprite.update(scale_x=1.3, scale_y=1.3)
         self.moving = False
+        self.shooting = False
         self.destination = (0, 0)
         self.speed = 200
         width, height = screen.get_size()
@@ -76,6 +80,9 @@ class Ruski(Enemy):
 
             if (self.x, self.y) == self.destination:
                 self.moving = False
+                self.shooting = True
+        elif self.shooting:
+            self.shooting = False
         else:
             self.choose_new_destination()
             self.moving = True
@@ -85,13 +92,24 @@ class Ruski(Enemy):
         self.destinations['current'] = random.choice(self.destinations[self.destinations['current']]['neighbours'])
         self.destination = (self.destinations[self.destinations['current']]['x'], self.destinations[self.destinations['current']]['y'])
 
+    def collision(self, object):
+        if isinstance(object, Shot):
+            for collision_check in object.collision_checks:
+                x, y = collision_check
+                if distance_by_values(x, y, self.x + self.sprite.width // 2, self.y + self.sprite.height // 2) < self.sprite.width // 2:
+                    object.out_of_bounds = True
+                    self.sprite.update(scale_x=self.sprite.scale_x-0.1, scale_y=self.sprite.scale_y-0.1)
+                    return True
+                return False
+        else:
+            raise NotImplemented
+            return False
 
 class Player:
     def __init__(self, screen):
         self.screen = screen
         self._rotation = 0
         self.speed = 100
-        
         screen_width, screen_height = screen.get_size()
         self.x = (screen_width - player_image.width) // 2
         self.y = (screen_height - player_image.height) // 2
@@ -100,8 +118,8 @@ class Player:
         self.screen.register_object(self)
         self.time_between_shots = 0.5
         self.time_last_shot = 0
-
         self.movement_update = {'x': 0, 'y': 0}
+        self.shots = []
 
     @property
     def rotation(self):
@@ -177,6 +195,10 @@ class Shot:
         self.speed = 300
         self.out_of_bounds = False
 
+    @property
+    def collision_checks(self):
+        return [(self.x, self.y), (self.x + self.sprite.width * cos(radians(self.rotation)), self.y + self.sprite.height * sin(radians(self.rotation)))]
+
     def draw(self):
         self.sprite.draw()
 
@@ -237,6 +259,12 @@ class Screen(pyglet.window.Window):
         self.update_movement(dt)
         for object in self.objects:
             object.update(dt)
+            if isinstance(object, Shot):
+                for target in self.objects:
+                    if isinstance(target, Enemy):
+                        if hasattr(target, 'collision'):
+                            if target.collision(object):
+                                print('Shot hit')
         self.objects = [object for object in self.objects if not hasattr(object, 'out_of_bounds') or object.out_of_bounds == False]
 
     def update_movement(self, dt):
