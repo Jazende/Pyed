@@ -15,9 +15,13 @@ player_image.anchor_y = int(player_image.height // 2)
 
 shot_image = pyglet.image.load("shot_r_with_start_transparant.png")
 
-enemy_image = pyglet.image.load("face_transparant_r.png")
-enemy_image.anchor_x = int(enemy_image.width // 2)
-enemy_image.anchor_y = int(enemy_image.height // 2)
+enemy_angry_image = pyglet.image.load("boss_angry_face_transparant.png")
+enemy_angry_image.anchor_x = int(enemy_angry_image.width // 2)
+enemy_angry_image.anchor_y = int(enemy_angry_image.height // 2)
+
+enemy_shocked_image = pyglet.image.load("boss_shocked_face_transparant.png")
+enemy_shocked_image.anchor_x = int(enemy_shocked_image.width // 2)
+enemy_shocked_image.anchor_y = int(enemy_shocked_image.height // 2)
 
 crosshair_image = pyglet.image.load("black_crosshair_transparant.png")
 cursor = pyglet.window.ImageMouseCursor(crosshair_image, 5, 5)
@@ -29,12 +33,6 @@ class Enemy:
 
     def __init__(self, screen):
         self.screen = screen
-        w, h = screen.get_size()
-        self.x = w // 2
-        self.y = (h * 4) // 5 
-        self.sprite = pyglet.sprite.Sprite(enemy_image, self.x, self.y)
-        self.sprite.update(scale_x=0.7, scale_y=0.7)
-
         self.screen.register_object(self)
 
     def draw(self):
@@ -52,36 +50,61 @@ class Enemy:
 class Ruski(Enemy):
     def __init__(self, screen):
         super().__init__(screen)
-        self.sprite.update(scale_x=1.3, scale_y=1.3)
+        w, h = screen.get_size()
+        self.x = w // 2
+        self.y = (h * 4) // 5
+        self.sprites = {'angry': pyglet.sprite.Sprite(enemy_angry_image, self.x, self.y), 'shocked': pyglet.sprite.Sprite(enemy_shocked_image, self.x, self.y)}
+        self.current_sprite = 'angry'
         self.moving = False
         self.shooting = False
         self.destination = (0, 0)
         self.speed = 200
         width, height = screen.get_size()
 
+        def x_calc(x, width, size):
+            return (100*(x+1)) if x < 2 else width-(100*(size-x))
+
+        def y_calc(y, height, size):
+            return (100*(y+1)) if y < 2 else height-(100*(size-y))
+
+        def neighbours_calc(x, y, size):
+            return [location for location in [(x-1, y), (x+1, y), (x, y-1), (x, y+1), (x-1, y-1), (x+1, y+1), (x-1, y+1), (x+1, y-1)] if location in [(i, j) for i in range(size) for j in range(size)]]
+
+        size = 4
+
         self.destinations = {
-            'current': (2, 3),
-            (0, 3): {'x': 100, 'y': height-100, 'neighbours': [(1, 3), (0, 2)]},
-            (1, 3): {'x': 200, 'y': height-100, 'neighbours': [(0, 3), (2, 3), (1, 2)]},
-            (2, 3): {'x': width-200, 'y': height-100, 'neighbours': [(1, 3), (3, 3), (2, 2)]},
-            (3, 3): {'x': width-100, 'y': height-100, 'neighbours': [(2, 3), (3, 2)]},
-
-            (0, 2): {'x': 100, 'y': height-200, 'neighbours': [(1, 2), (0, 1), (0, 3)]},
-            (1, 2): {'x': 200, 'y': height-200, 'neighbours': [(0, 2), (2, 2), (1, 1), (1, 3)]},
-            (2, 2): {'x': width-200, 'y': height-200, 'neighbours': [(1, 2), (3, 2), (2, 1), (2, 3)]},
-            (3, 2): {'x': width-100, 'y': height-200, 'neighbours': [(2, 2), (3, 1), (3, 3)]},
-
-            (0, 1): {'x': 100, 'y': 200, 'neighbours': [(1, 1), (0, 0), (0, 2)]},
-            (1, 1): {'x': 200, 'y': 200, 'neighbours': [(0, 1), (2, 1), (1, 0), (1, 2)]},
-            (2, 1): {'x': width-200, 'y': 200, 'neighbours': [(1, 1), (3, 1), (2, 0), (2, 2)]},
-            (3, 1): {'x': width-100, 'y': 200, 'neighbours': [(2, 1), (3, 0), (3, 2)]},
-
-            (0, 0): {'x': 100, 'y': 100, 'neighbours': [(1, 0), (0, 1)]},
-            (1, 0): {'x': 200, 'y': 100, 'neighbours': [(0, 0), (2, 0), (1, 1)]},
-            (2, 0): {'x': width-200, 'y': 100, 'neighbours': [(1, 0), (3, 0), (2, 1)]},
-            (3, 0): {'x': width-100, 'y': 100, 'neighbours': [(2, 0), (3, 1)]},
+            (i, j): {'x': x_calc(i, width, size), 'y': y_calc(j, height, size), 'neighbours': neighbours_calc(i, j, size)} for i in range(size) for j in range(size)
         }
-        
+        self.destinations['current'] = (2, 3)
+    
+    @property
+    def current_sprite(self):
+        return self._current_sprite
+    
+    @current_sprite.setter
+    def current_sprite(self, value):
+        if not value in self.sprites.keys():
+            return
+        self._current_sprite = value
+
+    @property
+    def sprite(self):
+        return self.sprites[self.current_sprite]
+
+    def swap_shocked_face(self, dt):
+        self.current_sprite = 'shocked'
+        pyglet.clock.schedule_once(self.swap_angry_face, 3)
+
+    def swap_angry_face(self, dt):
+        self.current_sprite = 'angry'
+
+    def update_sprites(self, **kwargs):
+        for sprite in self.sprites.keys():
+            self.sprites[sprite].update(**kwargs)
+
+    def draw(self):
+        self.sprites[self.current_sprite].draw()
+
     def update(self, dt):
         if self.moving:
             delta_x, delta_y = normalize(self.destination[0] - self.x, self.destination[1] - self.y)
@@ -100,7 +123,7 @@ class Ruski(Enemy):
         else:
             self.choose_new_destination()
             self.moving = True
-        self.sprite.update(x=self.x, y=self.y)
+        self.update_sprites(x=self.x, y=self.y, rotation=self.rotation)
     
     def choose_new_destination(self):
         self.destinations['current'] = random.choice(self.destinations[self.destinations['current']]['neighbours'])
@@ -113,8 +136,9 @@ class Ruski(Enemy):
                 # +2 for some leeway in hitting
                 if distance_by_values(x, y, self.x, self.y) < (self.sprite.width // 2 + 2):
                     object.out_of_bounds = True
-                    self.sprite.update(scale_x=self.sprite.scale_x-0.1, scale_y=self.sprite.scale_y-0.1)
+                    self.update_sprites(scale_x=self.sprite.scale_x-0.1, scale_y=self.sprite.scale_y-0.1)
                     self.speed += 25
+                    self.swap_shocked_face()
                     return True
                 return False
         else:
