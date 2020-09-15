@@ -9,27 +9,15 @@ from math_utilities import normalize_with_speed
 from math_utilities import sin
 from math_utilities import cos
 from math_utilities import radians
+from images import player_image
+from images import shot_image
+from images import enemy_angry_image
+from images import enemy_shocked_image
+from images import crosshair_image
+from images import buff_image
+from images import crosshair_image
 
-player_image = pyglet.image.load("images\\red_circle_p_transparant.png")
-player_image.anchor_x = int(player_image.width // 2)
-player_image.anchor_y = int(player_image.height // 2)
-
-shot_image = pyglet.image.load("images\\shot_r_with_start_transparant.png")
-
-enemy_angry_image = pyglet.image.load("images\\boss_angry_face_transparant.png")
-enemy_angry_image.anchor_x = int(enemy_angry_image.width // 2)
-enemy_angry_image.anchor_y = int(enemy_angry_image.height // 2)
-
-enemy_shocked_image = pyglet.image.load("images\\boss_shocked_face_transparant.png")
-enemy_shocked_image.anchor_x = int(enemy_shocked_image.width // 2)
-enemy_shocked_image.anchor_y = int(enemy_shocked_image.height // 2)
-
-crosshair_image = pyglet.image.load("images\\black_crosshair_transparant.png")
 cursor = pyglet.window.ImageMouseCursor(crosshair_image, 5, 5)
-
-buff_image = pyglet.image.load("images\\basic_buff.png")
-buff_image.anchor_x = int(buff_image.width // 2)
-buff_image.anchor_y = int(buff_image.height // 2)
 
 directionals = {'up': [122, 65362], 'left': [113, 65361], 'right': [100, 65363], 'down': [115, 65364], 'dash': [65505, ]}
 
