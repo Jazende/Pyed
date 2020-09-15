@@ -9,13 +9,9 @@ from math_utilities import normalize_with_speed
 from math_utilities import sin
 from math_utilities import cos
 from math_utilities import radians
-from images import player_image
-from images import shot_image
-from images import enemy_angry_image
-from images import enemy_shocked_image
-from images import crosshair_image
+from images import player_image, shot_image, crosshair_image
+from images import enemy_angry_image, enemy_shocked_image
 from images import buff_image
-from images import crosshair_image
 
 cursor = pyglet.window.ImageMouseCursor(crosshair_image, 5, 5)
 
